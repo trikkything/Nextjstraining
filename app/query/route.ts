@@ -1,8 +1,8 @@
-// import bcrypt from 'bcrypt';
-// import { db } from '@vercel/postgres';
-// import { invoices, customers, revenue, users } from '../lib/placeholder-data';
+import bcrypt from 'bcrypt';
+import { db } from '@vercel/postgres';
+import { invoices, customers, revenue, users } from '../lib/placeholder-data';
 
-// const client = await db.connect();
+const client = await db.connect();
 
 // async function seedUsers() {
 //   await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
@@ -80,39 +80,24 @@
 //   return insertedCustomers;
 // }
 
-// async function seedRevenue() {
-//   await client.sql`
-//     CREATE TABLE IF NOT EXISTS revenue (
-//       month VARCHAR(4) NOT NULL UNIQUE,
-//       revenue INT NOT NULL
-//     );
-//   `;
+async function listInvoices() {
+  const result = await client.sql`
+    SELECT invoices.amount, customers.name
+            FROM invoices
+            JOIN customers ON invoices.customer_id = customers.id
+            WHERE invoices.amount = 666;
+  `;
 
-//   const insertedRevenue = await Promise.all(
-//     revenue.map(
-//       (rev) => client.sql`
-//         INSERT INTO revenue (month, revenue)
-//         VALUES (${rev.month}, ${rev.revenue})
-//         ON CONFLICT (month) DO NOTHING;
-//       `,
-//     ),
-//   );
+  return result.rows;
+}
 
-//   return insertedRevenue;
-// }
+export async function GET() {
+   try {
+    const invoices = await listInvoices(); // Fetch invoices
 
-// export async function GET() {
-//   try {
-//     await client.sql`BEGIN`;
-//     await seedUsers();
-//     await seedCustomers();
-//     await seedInvoices();
-//     await seedRevenue();
-//     await client.sql`COMMIT`;
-
-//     return Response.json({ message: 'Database seeded successfully' });
-//   } catch (error) {
-//     await client.sql`ROLLBACK`;
-//     return Response.json({ error }, { status: 500 });
-//   }
-// }
+    return Response.json({ invoices }); // Return actual data
+    } catch (error) {
+      return Response.json({ error }, { status: 500 });
+    }
+  }
+  
